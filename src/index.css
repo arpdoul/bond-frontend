@@ -1,0 +1,7 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #050911;
+  color: #e2e8f0;
+  font-family: 'Courier New', monospace;
+  min-height: 100vh;
+}
