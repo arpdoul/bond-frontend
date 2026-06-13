@@ -44,6 +44,20 @@ export default function App() {
   const [bridgeAmount, setBridgeAmount] = useState('');
   const [txStep, setTxStep] = useState('');
   const canvasRef = useRef(null);
+  // AgentMesh new state
+  const [agentTask, setAgentTask] = useState('');
+  const [agentChain, setAgentChain] = useState([]);
+  const [agentAnswer, setAgentAnswer] = useState('');
+  const [agentRunning, setAgentRunning] = useState(false);
+  const [streamId, setStreamId] = useState(null);
+  const [streamElapsed, setStreamElapsed] = useState(0);
+  const [streamAmt, setStreamAmt] = useState('0.000000');
+  const [streamActive, setStreamActive] = useState(false);
+  const [streamReceipt, setStreamReceipt] = useState(null);
+  const [creatorLocked, setCreatorLocked] = useState(true);
+  const [creatorContent, setCreatorContent] = useState('');
+  const [creatorStats, setCreatorStats] = useState(null);
+  const [creatorPaying, setCreatorPaying] = useState(false);
 
   const showMsg = (text, ok = true) => {
     setMsg({ text, ok });
@@ -93,7 +107,62 @@ export default function App() {
   useEffect(() => {
     if (token) fetchAll();
     const i = setInterval(() => { if (token) fetchAll(); }, 10000);
-    return () => clearInterval(i);
+  
+  // AgentNet
+  const runAgentTask = async () => {
+    if (!agentTask) return;
+    setAgentRunning(true); setAgentChain([]); setAgentAnswer('');
+    try {
+      const r = await axios.post(API + '/api/agentnet/task', { task: agentTask });
+      setAgentChain(r.data.paymentChain || []);
+      setAgentAnswer(r.data.answer || '');
+    } catch(e) { showMsg('AgentNet error: ' + e.message, false); }
+    setAgentRunning(false);
+  };
+
+  // Stream
+  const startStream = async () => {
+    try {
+      const r = await axios.post(API + '/api/stream/start', { userWallet: agentWallet || '0x000', service: 'AI Compute' });
+      setStreamId(r.data.sessionId); setStreamActive(true); setStreamReceipt(null);
+      const iv = setInterval(async () => {
+        const s = await axios.get(API + '/api/stream/status/' + r.data.sessionId);
+        setStreamElapsed(s.data.elapsed); setStreamAmt(s.data.accumulated);
+        if (!s.data.active) clearInterval(iv);
+      }, 1000);
+    } catch(e) { showMsg('Stream error: ' + e.message, false); }
+  };
+  const stopStream = async () => {
+    try {
+      const r = await axios.post(API + '/api/stream/stop', { sessionId: streamId });
+      setStreamActive(false); setStreamReceipt(r.data);
+    } catch(e) { showMsg('Stop error: ' + e.message, false); }
+  };
+
+  // Creator
+  // Load creator stats on mount
+  useEffect(() => { loadCreatorStats(); }, []);
+
+  const loadCreatorStats = async () => {
+    try { const r = await axios.get(API + '/api/creator/stats'); setCreatorStats(r.data); } catch(e) {}
+  };
+  const unlockArticle = async () => {
+    setCreatorPaying(true);
+    try {
+      if (!window.ethereum) { showMsg('Connect wallet first', false); setCreatorPaying(false); return; }
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const wallet = accounts[0];
+      const data = encodeTransfer('0x72478d18b613f5240ee0454af1ac8ae3c94ad7a6', 0.05);
+      const txHash = await window.ethereum.request({ method: 'eth_sendTransaction',
+        params: [{ from: wallet, to: USDC_ARC, data, gas: '0x186A0' }] });
+      await axios.post(API + '/api/creator/pay', { wallet, txId: txHash });
+      const r = await axios.get(API + '/api/creator/article?wallet=' + wallet);
+      setCreatorContent(r.data.content); setCreatorLocked(false); loadCreatorStats();
+    } catch(e) { showMsg('Payment error: ' + e.message, false); }
+    setCreatorPaying(false);
+  };
+
+  return () => clearInterval(i);
   }, [token]);
 
   // P&L Chart
