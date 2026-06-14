@@ -302,6 +302,9 @@ export default function App() {
     { id: 'agent', label: 'Agent Wallet' },
     { id: 'history', label: 'History' },
     { id: 'rates', label: 'FX Rates' },
+    { id: 'agentnet', label: '⛓ AgentNet' },
+    { id: 'streampay', label: '⏱ Stream Pay' },
+    { id: 'creator', label: '📄 Creator' },
   ];
 
   return (
