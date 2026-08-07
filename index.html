@@ -1,12 +1,452 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BOND</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BOND</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --green: #00ff88;
+      --red: #ff4444;
+      --blue: #00aaff;
+      --bg: #050911;
+      --card: #0a1020;
+      --border: #0d2040;
+      --muted: #3a5070;
+      --text: #c8d8e8;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Share Tech Mono', monospace;
+      min-height: 100vh;
+      padding: 0 0 60px;
+    }
+    /* Header */
+    .header {
+      text-align: center;
+      padding: 48px 16px 32px;
+      position: relative;
+    }
+    .header::after {
+      content: '';
+      display: block;
+      width: 200px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--green), transparent);
+      margin: 24px auto 0;
+    }
+    .logo {
+      font-family: 'Orbitron', monospace;
+      font-size: 52px;
+      font-weight: 900;
+      letter-spacing: 16px;
+      color: var(--green);
+      text-shadow: 0 0 40px rgba(0,255,136,0.4);
+    }
+    .tagline {
+      font-size: 11px;
+      letter-spacing: 5px;
+      color: var(--muted);
+      margin-top: 10px;
+      text-transform: uppercase;
+    }
+    .powered {
+      font-size: 10px;
+      color: #1a3050;
+      margin-top: 6px;
+    }
+    /* Agent status bar */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 10px 16px;
+      background: #030608;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      letter-spacing: 3px;
+    }
+    .pulse {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 2s infinite;
+    }
+    .pulse.off { background: var(--red); box-shadow: 0 0 8px var(--red); animation: none; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    /* Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      margin-top: 1px;
+    }
+    .card {
+      background: var(--card);
+      padding: 24px;
+    }
+    .card-label {
+      font-size: 9px;
+      letter-spacing: 4px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    .big-val {
+      font-family: 'Orbitron', monospace;
+      font-size: 28px;
+      color: var(--green);
+      letter-spacing: 2px;
+    }
+    .sub-val {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+    .wallet-addr {
+      font-size: 12px;
+      color: var(--blue);
+      word-break: break-all;
+      line-height: 1.6;
+      margin-top: 8px;
+    }
+    /* FX rows */
+    .fx-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+    }
+    .fx-row:last-child { border-bottom: none; }
+    .fx-pair { color: var(--muted); font-size: 10px; letter-spacing: 2px; }
+    .fx-val { color: var(--text); font-family: 'Orbitron', monospace; font-size: 14px; }
+    .fx-change { font-size: 10px; }
+    .up { color: var(--green); }
+    .dn { color: var(--red); }
+    /* Toggle button */
+    .btn {
+      width: 100%;
+      margin-top: 16px;
+      padding: 12px;
+      border: 1px solid currentColor;
+      background: transparent;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+    }
+    .btn-green { color: var(--green); }
+    .btn-green:hover { background: rgba(0,255,136,0.1); }
+    .btn-red { color: var(--red); }
+    .btn-red:hover { background: rgba(255,68,68,0.1); }
+    /* History */
+    .history {
+      margin: 1px 0;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+    }
+    .history-header {
+      padding: 16px 24px;
+      font-size: 9px;
+      letter-spacing: 4px;
+      color: var(--muted);
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .log-count {
+      background: var(--border);
+      padding: 2px 8px;
+      border-radius: 2px;
+      font-size: 10px;
+      color: var(--green);
+    }
+    .log-entry {
+      display: grid;
+      grid-template-columns: 70px 90px 1fr;
+      gap: 16px;
+      padding: 12px 24px;
+      border-bottom: 1px solid #07101a;
+      font-size: 11px;
+      align-items: start;
+    }
+    .log-time { color: var(--muted); }
+    .log-action { letter-spacing: 2px; font-weight: bold; }
+    .log-settle { color: var(--green); }
+    .log-hold { color: var(--muted); }
+    .log-result { color: var(--text); line-height: 1.5; }
+    .log-empty {
+      padding: 40px 24px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 2px;
+    }
+    /* Ticker */
+    .ticker {
+      overflow: hidden;
+      background: #030608;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 0;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      white-space: nowrap;
+    }
+    .ticker-inner {
+      display: inline-block;
+      animation: scroll 30s linear infinite;
+    }
+    @keyframes scroll { from{transform:translateX(100vw)} to{transform:translateX(-100%)} }
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 40px 16px 0;
+      font-size: 9px;
+      letter-spacing: 3px;
+      color: #0d2040;
+    }
+    /* Loading */
+    .loading { color: var(--muted); font-size: 12px; letter-spacing: 2px; }
+    /* Error */
+    .api-offline {
+      background: rgba(255,68,68,0.05);
+      border: 1px solid rgba(255,68,68,0.2);
+      padding: 12px 16px;
+      font-size: 11px;
+      color: rgba(255,68,68,0.7);
+      letter-spacing: 2px;
+      margin: 16px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">BOND</div>
+  <div class="tagline">Autonomous FX Settlement Agent</div>
+  <div class="powered">Circle Agent Stack · Arc Testnet · Nanopayments</div>
+</div>
+
+<div class="ticker">
+  <span class="ticker-inner">
+    ◆ BOND AGENT ONLINE &nbsp;&nbsp; ◆ CIRCLE AGENT STACK &nbsp;&nbsp; ◆ ARC TESTNET &nbsp;&nbsp; ◆ NANOPAYMENTS ENABLED &nbsp;&nbsp; ◆ USDC SETTLEMENT &nbsp;&nbsp; ◆ GAS-FREE TRANSFERS &nbsp;&nbsp; ◆ AUTONOMOUS FX ROUTING &nbsp;&nbsp; ◆ X402 COMPATIBLE &nbsp;&nbsp;
+  </span>
+</div>
+
+<div class="status-bar">
+  <div class="pulse" id="statusPulse"></div>
+  <span id="statusText">CONNECTING...</span>
+  <span style="color:#1a3050">|</span>
+  <span id="uptimeText" style="color:#1a3050">--</span>
+</div>
+
+<div id="apiOffline" class="api-offline" style="display:none">
+  ⚠ BACKEND OFFLINE — Connect your Railway backend via VITE_API_URL or run locally
+</div>
+
+<div class="grid">
+  <!-- Agent Wallet -->
+  <div class="card">
+    <div class="card-label">Agent Wallet</div>
+    <div class="big-val" id="walletBalance">-- USDC</div>
+    <div class="wallet-addr" id="walletAddr">0x···</div>
+    <div class="sub-val">Arc Testnet · USDC</div>
+    <button class="btn btn-red" id="toggleBtn" onclick="toggleAgent()">
+      ⏹ STOP AGENT
+    </button>
+  </div>
+
+  <!-- FX Rates -->
+  <div class="card">
+    <div class="card-label">FX Rates</div>
+    <div class="fx-row">
+      <span class="fx-pair">USDC / USD</span>
+      <span class="fx-val" id="rateUSDC">1.0000</span>
+      <span class="fx-change up">stable</span>
+    </div>
+    <div class="fx-row">
+      <span class="fx-pair">EURC / USD</span>
+      <span class="fx-val" id="rateEURC">--</span>
+      <span class="fx-change" id="eurcChange">--</span>
+    </div>
+    <div class="fx-row">
+      <span class="fx-pair">THRESHOLD</span>
+      <span class="fx-val" style="color:var(--blue)">0.10%</span>
+      <span class="fx-change" style="color:var(--muted)">bps</span>
+    </div>
+    <div class="sub-val" id="ratesUpdated" style="margin-top:12px">Fetching rates...</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="card">
+    <div class="card-label">Session Stats</div>
+    <div class="fx-row">
+      <span class="fx-pair">SETTLEMENTS</span>
+      <span class="fx-val" id="statSettles" style="color:var(--green)">0</span>
+    </div>
+    <div class="fx-row">
+      <span class="fx-pair">HOLDS</span>
+      <span class="fx-val" id="statHolds" style="color:var(--muted)">0</span>
+    </div>
+    <div class="fx-row">
+      <span class="fx-pair">FEES EARNED</span>
+      <span class="fx-val" id="statFees" style="color:var(--blue)">0.000000</span>
+    </div>
+    <div class="fx-row">
+      <span class="fx-pair">CHAIN</span>
+      <span class="fx-val" style="font-size:11px;color:var(--text)">ARC TESTNET</span>
+    </div>
+  </div>
+</div>
+
+<!-- Settlement Log -->
+<div class="history">
+  <div class="history-header">
+    <span>Settlement Log</span>
+    <span class="log-count" id="logCount">0 entries</span>
+  </div>
+  <div id="logContainer">
+    <div class="log-empty">◈ Agent is watching FX rates — settlements will appear here</div>
+  </div>
+</div>
+
+<div class="footer">BOND · CIRCLE AGENT STACK + ARC TESTNET · BUILT BY ARPDOUL</div>
+
+<script>
+  // ── Config ──────────────────────────────────────────────────────────
+  const API = (window.__ENV_API__ || '').replace(/\/$/, '') || null;
+  let agentRunning = true;
+  let history = [];
+  let prevEurc = null;
+  let statSettles = 0, statHolds = 0, statFees = 0;
+
+  // ── Helpers ──────────────────────────────────────────────────────────
+  function fmt(t) {
+    return new Date(t).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }
+
+  function updateStatusBar(running, uptime) {
+    const pulse = document.getElementById('statusPulse');
+    const text = document.getElementById('statusText');
+    const uptimeEl = document.getElementById('uptimeText');
+    pulse.className = 'pulse' + (running ? '' : ' off');
+    text.textContent = running ? 'AGENT RUNNING' : 'AGENT STOPPED';
+    text.style.color = running ? 'var(--green)' : 'var(--red)';
+    if (uptime != null) {
+      const m = Math.floor(uptime / 60), s = Math.floor(uptime % 60);
+      uptimeEl.textContent = `UPTIME ${m}m ${s}s`;
+      uptimeEl.style.color = 'var(--muted)';
+    }
+  }
+
+  function renderLog(entries) {
+    const c = document.getElementById('logContainer');
+    document.getElementById('logCount').textContent = entries.length + ' entries';
+    if (!entries.length) {
+      c.innerHTML = '<div class="log-empty">◈ Agent is watching FX rates — settlements will appear here</div>';
+      return;
+    }
+    // recalculate stats
+    statSettles = 0; statHolds = 0; statFees = 0;
+    entries.forEach(e => {
+      if (e.action === 'SETTLE') { statSettles++; if (e.fee) statFees += parseFloat(e.fee) || 0; }
+      else statHolds++;
+    });
+    document.getElementById('statSettles').textContent = statSettles;
+    document.getElementById('statHolds').textContent = statHolds;
+    document.getElementById('statFees').textContent = statFees.toFixed(6) + ' USDC';
+
+    c.innerHTML = entries.slice(0, 30).map(e => `
+      <div class="log-entry">
+        <span class="log-time">${fmt(e.timestamp)}</span>
+        <span class="log-action ${e.action === 'SETTLE' ? 'log-settle' : 'log-hold'}">${e.action}</span>
+        <span class="log-result">${e.result}</span>
+      </div>
+    `).join('');
+  }
+
+  function renderRates(r) {
+    document.getElementById('rateEURC').textContent = r.EURC_USD.toFixed(5);
+    document.getElementById('ratesUpdated').textContent = 'Updated ' + fmt(r.timestamp);
+    if (prevEurc !== null) {
+      const diff = r.EURC_USD - prevEurc;
+      const changeEl = document.getElementById('eurcChange');
+      changeEl.textContent = (diff >= 0 ? '▲ +' : '▼ ') + (diff * 100).toFixed(4) + '%';
+      changeEl.className = 'fx-change ' + (diff >= 0 ? 'up' : 'dn');
+    }
+    prevEurc = r.EURC_USD;
+  }
+
+  // ── API Fetching ──────────────────────────────────────────────────────
+  async function fetchAll() {
+    if (!API) {
+      // Demo mode — show static data so the UI isn't blank
+      document.getElementById('apiOffline').style.display = 'block';
+      updateStatusBar(true, 0);
+      document.getElementById('walletBalance').textContent = 'DEMO MODE';
+      document.getElementById('walletAddr').textContent = 'Connect backend to see live data';
+      renderRates({ USDC_USD: 1.0, EURC_USD: 0.91824, timestamp: new Date().toISOString() });
+      return;
+    }
+    try {
+      const [s, r, h] = await Promise.all([
+        fetch(API + '/api/status').then(x => x.json()),
+        fetch(API + '/api/rates').then(x => x.json()),
+        fetch(API + '/api/history').then(x => x.json()),
+      ]);
+      agentRunning = s.agent === 'running';
+      updateStatusBar(agentRunning, s.uptime);
+      document.getElementById('walletBalance').textContent =
+        s.balance ? s.balance : '-- USDC';
+      document.getElementById('walletAddr').textContent =
+        s.wallet ? s.wallet.slice(0,12) + '···' + s.wallet.slice(-8) : '0x···';
+      renderRates(r);
+      renderLog(h);
+      const btn = document.getElementById('toggleBtn');
+      btn.textContent = agentRunning ? '⏹ STOP AGENT' : '▶ START AGENT';
+      btn.className = 'btn ' + (agentRunning ? 'btn-red' : 'btn-green');
+      document.getElementById('apiOffline').style.display = 'none';
+    } catch (err) {
+      document.getElementById('apiOffline').style.display = 'block';
+      updateStatusBar(false, null);
+    }
+  }
+
+  async function toggleAgent() {
+    if (!API) return;
+    const action = agentRunning ? 'stop' : 'start';
+    await fetch(API + '/api/status/' + action, { method: 'POST' });
+    await fetchAll();
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────
+  fetchAll();
+  setInterval(fetchAll, 10000);
+</script>
+</body>
 </html>
